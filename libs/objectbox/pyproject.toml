@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "langchain-objectbox"
+version = "0.1.0"
+description = "Integration package connecting ObjectBox and LangChain"
+authors = ["Objectbox <info@objectbox.io>"]
+license = "Apache 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+langchain-core = "^0.1.45"
+objectbox = "~=0.7.0a"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.1.1"
+langchain = "^0.1.16"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

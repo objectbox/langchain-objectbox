@@ -1,0 +1,8 @@
+_*/
+.venv*
+dist/
+data/
+.tox/
+.cache/
+*.mdb
+/.idea
