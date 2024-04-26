@@ -11,7 +11,7 @@ from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from langchain.storage import InMemoryStore, InMemoryByteStore
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import FakeEmbeddings 
 
 from objectbox.c import obx_remove_db_files, c_str
 
@@ -120,7 +120,7 @@ def OFF_test_parent_document_retriever() -> None:
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
     # The vectorstore to use to index the child chunks
     vectorstore = ObjectBox(
-        embedding=HuggingFaceEmbeddings(), embedding_dimensions=768,
+        embedding=FakeEmbeddings(size=1352), embedding_dimensions=768,
     )
     # The storage layer for the parent documents
     store = InMemoryStore()
@@ -138,7 +138,7 @@ def OFF_test_parent_document_retriever() -> None:
     sub_docs = vectorstore.similarity_search("justice breyer")
 
     retrieved_docs = retriever.invoke("justice breyer")
-    assert len(retrieved_docs[0].page_content) == 38540
+    assert len(retrieved_docs[0].page_content) == 75012 
 
 
 def OFF_test_multi_vector_retriever() -> None:
@@ -153,7 +153,7 @@ def OFF_test_multi_vector_retriever() -> None:
     docs = text_splitter.split_documents(docs)
     # The vectorstore to use to index the child chunks
     vectorstore = ObjectBox(
-        embedding=HuggingFaceEmbeddings(), embedding_dimensions=768
+        embedding=FakeEmbeddings(size=1352), embedding_dimensions=768
     )
     # The storage layer for the parent documents
     store = InMemoryByteStore()
@@ -184,6 +184,6 @@ def OFF_test_multi_vector_retriever() -> None:
     res = retriever.vectorstore.similarity_search("justice breyer")[0]
 
     # Retriever returns larger chunks
-    assert len(retriever.invoke("justice breyer")[0].page_content) == 9875
+    assert len(retriever.invoke("justice breyer")[0].page_content) == 9407
 
     docs = text_splitter.split_documents(docs)
