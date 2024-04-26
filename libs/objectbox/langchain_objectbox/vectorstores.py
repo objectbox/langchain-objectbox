@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 from typing import (
@@ -74,15 +73,17 @@ class ObjectBox(VectorStore):
         """
         embeddings = self._embedding.embed_documents(list(texts))
         ids = []
+
+        if not metadatas:
+            metadatas = [{} for _ in texts]
+
         with self._db.write_tx():
-            for idx, text in enumerate(texts):
-                if metadatas and idx < len(metadatas):
-                    metadata = json.dumps(metadatas[idx])
-                else:
-                    metadata = json.dumps({})
+            for text, metadata, embedding in zip(texts, metadatas, embeddings):
                 object_id = self._vector_box.put(
                     self._entity_model(
-                        text=text, embeddings=embeddings[idx], metadata=metadata
+                        text=text,
+                        metadata=metadata,
+                        embeddings=embedding
                     )
                 )
                 ids.append(object_id)
@@ -98,16 +99,8 @@ class ObjectBox(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        qb = self._vector_box.query()
         embedded_query = self._embedding.embed_query(query)
-        embeddings_prop = self._entity_model.get_property("embeddings")
-        qb.nearest_neighbors_f32(embeddings_prop, embedded_query, k)
-        query_build = qb.build()
-        query_result = query_build.find()
-        return [
-            Document(page_content=result.text, metadata=json.loads(result.metadata))
-            for result in query_result
-        ]
+        return self.similarity_search_by_vector(embedded_query, k, **kwargs)
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
@@ -121,21 +114,15 @@ class ObjectBox(VectorStore):
         Returns:
             List of Documents with score most similar to the query vector.
         """
-
-        qb = self._vector_box.query()
         embedded_query = self._embedding.embed_query(query)
         embeddings_prop = self._entity_model.get_property("embeddings")
+        qb = self._vector_box.query()
         qb.nearest_neighbors_f32(embeddings_prop, embedded_query, k)
-        query_build = qb.build()
-        query_result = query_build.find_with_scores()
+        query = qb.build()
+        results = query.find_with_scores()
         return [
-            (
-                Document(
-                    page_content=result[0].text, metadata=json.loads(result[0].metadata)
-                ),
-                result[1],
-            )
-            for result in query_result
+            (Document(page_content=obj.text, metadata=obj.metadata), score)
+            for obj, score in results
         ]
 
     def similarity_search_by_vector(
@@ -150,14 +137,14 @@ class ObjectBox(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
-        qb = self._vector_box.query()
         embeddings_prop = self._entity_model.get_property("embeddings")
+        qb = self._vector_box.query()
         qb.nearest_neighbors_f32(embeddings_prop, embedding, k)
-        query_build = qb.build()
-        query_result = query_build.find()
+        query = qb.build()
+        results = query.find_with_scores()
         return [
-            Document(page_content=result.text, metadata=json.loads(result.metadata))
-            for result in query_result
+            Document(page_content=obj.text, metadata=obj.metadata)
+            for obj, _ in results
         ]
 
     @classmethod
@@ -215,18 +202,18 @@ class ObjectBox(VectorStore):
         class VectorEntity:
             id = Id(id=1, uid=1001)
             text = Property(str, type=PropertyType.string, id=2, uid=1002)
+            metadata = Property(dict, type=PropertyType.flex, id=3, uid=1003)
             embeddings = Property(
                 np.ndarray,
                 type=PropertyType.floatVector,
-                id=3,
-                uid=1003,
+                id=4,
+                uid=1004,
                 index=HnswIndex(
-                    id=3,
+                    id=1,
                     uid=10001,
                     dimensions=self._embedding_dimensions,
                     distance_type=HnswDistanceType.EUCLIDEAN,
                 ),
             )
-            metadata = Property(str, type=PropertyType.string, id=4, uid=1004)
 
         return VectorEntity

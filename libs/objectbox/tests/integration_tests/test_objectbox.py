@@ -4,19 +4,20 @@ from typing import Generator
 
 import pytest
 
-from langchain_objectbox.vectorstores import ObjectBox
+from langchain_objectbox import ObjectBox
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings, ConsistentFakeEmbeddings
 from langchain.storage import InMemoryStore, InMemoryByteStore
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
-from langchain_community.embeddings import FakeEmbeddings 
 
 from objectbox.c import obx_remove_db_files, c_str
 
+
 def remove_test_dir(test_dir: str) -> None:
-    obx_remove_db_files(c_str(test_dir)) 
+    obx_remove_db_files(c_str(test_dir))
+
 
 @pytest.fixture(autouse=True)
 def auto_cleanup() -> Generator[None, None, None]:
@@ -40,18 +41,47 @@ def test_objectbox_db_initialisation() -> None:
 
 
 def test_similarity_search() -> None:
-    ob = ObjectBox(embedding=FakeEmbeddings(), embedding_dimensions=10)
-    texts = ["foo", "bar", "baz"]
-    ob.add_texts(texts=texts)
+    ob = ObjectBox(embedding=ConsistentFakeEmbeddings(), embedding_dimensions=10)
 
-    query = ob.similarity_search("foo", k=1)
-    assert len(query) == 1
+    objects = [
+        {"title": "Inception",
+         "year": 2010, "director": "Christopher Nolan", "genre": ["Science Fiction", "Action", "Thriller"]},
+        {"title": "Spirited Away",
+         "year": 2001, "director": "Hayao Miyazaki", "genre": ["Animation", "Fantasy", "Adventure"]},
+        {"title": "The Shawshank Redemption",
+         "year": 1994, "director": "Frank Darabont", "genre": ["Drama", "Crime"]},
+        {"title": "Pan's Labyrinth",
+         "year": 2006, "director": "Guillermo del Toro", "genre": ["Fantasy", "Drama", "War"]},
+        {"title": "Pulp Fiction",
+         "year": 1994, "director": "Quentin Tarantino", "genre": ["Crime", "Drama"]}
+    ]
+    texts = [obj["title"] for obj in objects]  # text is the title
+    metadatas = [obj for obj in objects]  # Use all object attributes as its metadata (including the text)
 
-    query = ob.similarity_search("foo", k=2)
-    assert len(query) == 2
+    ob.add_texts(texts=texts, metadatas=metadatas)
 
-    query = ob.similarity_search("foo", k=3)
-    assert len(query) == 3
+    results = ob.similarity_search("Inception", k=1)
+    assert len(results) == 1
+    assert results[0].page_content == "Inception"
+    assert results[0].metadata['year'] == 2010
+    assert results[0].metadata['director'] == 'Christopher Nolan'
+    assert results[0].metadata['genre'] == ['Science Fiction', 'Action', 'Thriller']
+
+    results = ob.similarity_search("Spirited Away", k=2)
+    assert len(results) == 2
+    assert results[0].page_content == "Spirited Away"
+    assert results[0].metadata['year'] == 2001
+    assert results[1].page_content == "The Shawshank Redemption"
+    assert results[1].metadata['year'] == 1994
+
+    results = ob.similarity_search("The Shawshank Redemption", k=3)
+    assert len(results) == 3
+    assert results[0].page_content == "The Shawshank Redemption"
+    assert results[0].metadata['year'] == 1994
+    assert results[1].page_content == "Pan's Labyrinth"
+    assert results[1].metadata['year'] == 2006
+    assert results[2].page_content == "Spirited Away"
+    assert results[2].metadata['year'] == 2001
 
 
 def test_from_texts() -> None:
@@ -120,7 +150,7 @@ def OFF_test_parent_document_retriever() -> None:
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
     # The vectorstore to use to index the child chunks
     vectorstore = ObjectBox(
-        embedding=FakeEmbeddings(size=1352), embedding_dimensions=768,
+        embedding=ConsistentFakeEmbeddings(dimensionality=768), embedding_dimensions=768,
     )
     # The storage layer for the parent documents
     store = InMemoryStore()
@@ -138,7 +168,7 @@ def OFF_test_parent_document_retriever() -> None:
     sub_docs = vectorstore.similarity_search("justice breyer")
 
     retrieved_docs = retriever.invoke("justice breyer")
-    assert len(retrieved_docs[0].page_content) == 75012 
+    assert len(retrieved_docs[0].page_content) == 38540
 
 
 def OFF_test_multi_vector_retriever() -> None:
@@ -153,7 +183,7 @@ def OFF_test_multi_vector_retriever() -> None:
     docs = text_splitter.split_documents(docs)
     # The vectorstore to use to index the child chunks
     vectorstore = ObjectBox(
-        embedding=FakeEmbeddings(size=1352), embedding_dimensions=768
+        embedding=ConsistentFakeEmbeddings(dimensionality=768), embedding_dimensions=768
     )
     # The storage layer for the parent documents
     store = InMemoryByteStore()
@@ -184,6 +214,6 @@ def OFF_test_multi_vector_retriever() -> None:
     res = retriever.vectorstore.similarity_search("justice breyer")[0]
 
     # Retriever returns larger chunks
-    assert len(retriever.invoke("justice breyer")[0].page_content) == 9407
+    assert len(retriever.invoke("justice breyer")[0].page_content) == 9194
 
     docs = text_splitter.split_documents(docs)
