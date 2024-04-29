@@ -1,15 +1,18 @@
 [tool.poetry]
 name = "langchain-objectbox"
-version = "0.1.0"
+version = "0.1.0a0"
 description = "Integration package connecting ObjectBox and LangChain"
-authors = ["Objectbox <info@objectbox.io>"]
-license = "Apache 2.0"
+authors = ["ObjectBox" ]
+license = "Apache 2.0" 
 readme = "README.md"
-
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache 2.0 License"
+]
 [tool.poetry.dependencies]
 python = "^3.8.1" 
 langchain-core = "^0.1.45"
-objectbox = "~=0.7.0a"
+objectbox = "0.7.0a7"
 
 
 [tool.poetry.group.test.dependencies]
