@@ -3,11 +3,11 @@ name = "langchain-objectbox"
 version = "0.1.0a0"
 description = "Integration package connecting ObjectBox and LangChain"
 authors = ["ObjectBox" ]
-license = "Apache 2.0" 
+license = "MIT" 
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: Apache 2.0 License"
+    "License :: OSI Approved :: MIT License"
 ]
 [tool.poetry.dependencies]
 python = "^3.8.1" 
