@@ -10,5 +10,6 @@ cp $repo_dir/libs/community/tests/integration_tests/vectorstores/test_objectbox.
 
 sed -i s/langchain_community.vectorstores.objectbox/langchain_objectbox/g $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
 sed -i s@../../docs/docs/modules@testdata@g $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
-sed -i 's@from langchain_community.embeddings import HuggingFaceEmbeddings@@g' $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
-sed -i 's@HuggingFaceEmbeddings()@ConsistentFakeEmbeddings(dimensionality=768)@g' $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
+sed -i 's/from langchain_community.embeddings import HuggingFaceEmbeddings//g' $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
+sed -i 's/HuggingFaceEmbeddings[(][)]/ConsistentFakeEmbeddings(dimensionality=768)/g' $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
+sed -i 's/9875/9194/g' $project_dir/libs/objectbox/tests/integration_tests/test_objectbox.py
