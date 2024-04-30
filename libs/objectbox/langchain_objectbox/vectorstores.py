@@ -97,17 +97,29 @@ class ObjectBox(VectorStore):
         embedded_query = self._embedding.embed_query(query)
         return self.similarity_search_by_vector(embedded_query, k, **kwargs)
 
+    # Overwrite from VectorStore
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        if self._distance_type == HnswDistanceType.EUCLIDEAN:
-            raise NotImplementedError  # TODO remap euclidean distance in range [0, 2] and then normalize
-        elif self._distance_type == HnswDistanceType.COSINE:
-            return lambda score: score / 2.0
-        elif self._distance_type == HnswDistanceType.DOT_PRODUCT:
-            return lambda score: score / 2.0
-        elif self._distance_type == HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED:
-            return lambda score: score / 2.0
+        return lambda score: self._convert_score(self._distance_type, score)
+
+    @staticmethod
+    def _convert_score(type: HnswDistanceType, score: float) -> float:
+        # Map ObjectBox distance to LangChain range, in which 0 is dissimilar, 1 is most similar.
+        if type == HnswDistanceType.EUCLIDEAN:
+            # Not required: score = sqrt(score)  # ObjectBox returns squared Euclidean
+            if score > 1.0:  # For now, we assume normalized vectors, which result in scores in the range 0..1
+                return 0.0
+            return 1.0 - score
+        elif type == HnswDistanceType.COSINE:
+            return 1.0 - score / 2.0
+        elif type == HnswDistanceType.DOT_PRODUCT:
+            if score > 2.0:  # For now, we assume normalized vectors, which result in scores in the range 0..2
+                return 0.0
+            return 1.0 - score / 2.0
+        elif type == HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED:
+            return 1.0 - score / 2.0
         else:
-            raise Exception(f"Unknown distance type: {self._distance_type.name}")
+            raise Exception(f"Unknown distance type: {type.name}")
+
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any

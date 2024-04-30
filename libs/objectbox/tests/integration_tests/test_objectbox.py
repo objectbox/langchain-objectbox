@@ -12,7 +12,6 @@ from langchain.storage import InMemoryStore, InMemoryByteStore
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
 
-
 from objectbox.c import obx_remove_db_files, c_str
 from objectbox.model.properties import HnswDistanceType
 
@@ -140,20 +139,46 @@ def test_similarity_search_distance_types() -> None:
     # Test DOT_PRODUCT_NON_NORMALIZED
     # TODO Core error: Argument condition "value <= OBXHnswDistanceType_Hamming" not met
     # embedder.known_texts = []  # To produce same embeddings
-    # ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED,
-    #                clear_db=True)
-    # ob.add_texts(texts)
-    #
-    # results = ob.similarity_search_with_score([1.3, 1.5], k=3)
-    # print(results)
-    #
-    # results = ob.similarity_search_by_vector([1.3, 1.5], k=3)
-    # print(results)
-    # assert results[0].page_content == "Apple"  # Dot product: 1.3
-    # assert results[1].page_content == "Banana"  # Dot product: 2.8
-    # assert results[2].page_content == "Carrot"  # Dot product: 4.3
-    #
-    # del ob
+    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.COSINE,
+                   clear_db=True)
+    ob.add_texts(texts)
+
+    results = ob.similarity_search_by_vector([2.0, 2.0], k=3)  # Same direction as Banana
+    print(results)
+    assert results[0].page_content == "Banana"
+    assert results[1].page_content == "Carrot"
+    assert results[2].page_content == "Mango"
+
+    # This uses ObjectBox distance
+    results = ob.similarity_search_with_score("Banana", k=3)
+    assert results[0][0].page_content == "Banana"
+    assert results[1][0].page_content == "Carrot"
+    assert results[2][0].page_content == "Mango"
+    assert results[0][1] < results[1][1]
+    assert results[1][1] < results[2][1]
+    assert results[0][1] < 1.0
+    assert results[0][1] == 0.0  # perfect match
+    assert results[1][1] > 0.0
+    assert results[1][1] < 1.0
+    assert results[2][1] > 0.0
+    assert results[2][1] < 1.0
+    # TODO create vectors that result in a distance > 1.0
+
+    # With LangChain relevance scores, higher scores indicate a higher similarity (0 is dissimilar, 1 is most similar)
+    results = ob.similarity_search_with_relevance_scores("Banana", k=3)
+    assert results[0][0].page_content == "Banana"
+    assert results[1][0].page_content == "Carrot"
+    assert results[2][0].page_content == "Mango"
+    assert results[0][1] > results[1][1]
+    assert results[1][1] > results[2][1]
+    assert results[0][1] > 0.0
+    assert results[0][1] == 1.0  # perfect match
+    assert results[1][1] > 0.0
+    assert results[1][1] < 1.0
+    assert results[2][1] > 0.0
+    assert results[2][1] < 1.0
+
+    del ob
 
 
 def test_similarity_search_with_relevance_scores() -> None:
