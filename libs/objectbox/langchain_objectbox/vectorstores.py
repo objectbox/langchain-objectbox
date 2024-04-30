@@ -1,13 +1,6 @@
 import os
 import shutil
-from typing import (
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-)
-
+from typing import *
 import numpy as np
 import objectbox
 from langchain_core.documents import Document
@@ -44,11 +37,13 @@ class ObjectBox(VectorStore):
         self,
         embedding: Embeddings,
         embedding_dimensions: int,
+        distance_type: HnswDistanceType = HnswDistanceType.EUCLIDEAN,
         db_directory: Optional[str] = None,
         clear_db: Optional[bool] = False,
     ):
         self._embedding = embedding
         self._embedding_dimensions = embedding_dimensions
+        self._distance_type = distance_type
         self.db_directory = db_directory
         self._clear_db = clear_db
         self._entity_model = self._create_entity_class()
@@ -101,6 +96,18 @@ class ObjectBox(VectorStore):
         """
         embedded_query = self._embedding.embed_query(query)
         return self.similarity_search_by_vector(embedded_query, k, **kwargs)
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        if self._distance_type == HnswDistanceType.EUCLIDEAN:
+            raise NotImplementedError  # TODO remap euclidean distance in range [0, 2] and then normalize
+        elif self._distance_type == HnswDistanceType.COSINE:
+            return lambda score: score / 2.0
+        elif self._distance_type == HnswDistanceType.DOT_PRODUCT:
+            return lambda score: score / 2.0
+        elif self._distance_type == HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED:
+            return lambda score: score / 2.0
+        else:
+            raise Exception(f"Unknown distance type: {self._distance_type.name}")
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
@@ -212,7 +219,7 @@ class ObjectBox(VectorStore):
                     id=1,
                     uid=10001,
                     dimensions=self._embedding_dimensions,
-                    distance_type=HnswDistanceType.EUCLIDEAN,
+                    distance_type=self._distance_type,
                 ),
             )
 

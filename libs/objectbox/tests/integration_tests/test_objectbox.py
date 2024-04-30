@@ -12,7 +12,9 @@ from langchain.storage import InMemoryStore, InMemoryByteStore
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
 
+
 from objectbox.c import obx_remove_db_files, c_str
+from objectbox.model.properties import HnswDistanceType
 
 
 def remove_test_dir(test_dir: str) -> None:
@@ -41,7 +43,11 @@ def test_objectbox_db_initialisation() -> None:
 
 
 def test_similarity_search() -> None:
-    ob = ObjectBox(embedding=ConsistentFakeEmbeddings(), embedding_dimensions=10)
+    ob = ObjectBox(
+        embedding=ConsistentFakeEmbeddings(dimensionality=10),
+        embedding_dimensions=10,
+        distance_type=HnswDistanceType.EUCLIDEAN
+    )
 
     objects = [
         {"title": "Inception",
@@ -82,6 +88,113 @@ def test_similarity_search() -> None:
     assert results[1].metadata['year'] == 2006
     assert results[2].page_content == "Spirited Away"
     assert results[2].metadata['year'] == 2001
+
+
+def test_similarity_search_distance_types() -> None:
+    """ Test similarity search with different distance types (euclidean, cosine, dot product, ...). """
+
+    texts = ["Apple", "Banana", "Carrot", "Mango", "Onion"]
+
+    # Check embeddings values
+    embedder = ConsistentFakeEmbeddings(dimensionality=2)
+    embeddings = embedder.embed_documents(texts)
+    assert embeddings == [
+        [1.0, 0.0],  # Apple
+        [1.0, 1.0],  # Banana
+        [1.0, 2.0],  # Carrot
+        [1.0, 3.0],  # Mango
+        [1.0, 4.0],  # Onion
+    ]
+
+    # Test EUCLIDEAN
+    embedder.known_texts = []  # To produce same embeddings
+    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.EUCLIDEAN,
+                   clear_db=True)
+    ob.add_texts(texts)
+
+    results = ob.similarity_search_by_vector([1.0, 2.7], k=3)
+    assert results[0].page_content == "Mango"
+    assert results[1].page_content == "Carrot"
+    assert results[2].page_content == "Onion"
+
+    del ob
+
+    # Test COSINE
+    embedder.known_texts = []  # To produce same embeddings
+    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.COSINE,
+                   clear_db=True)
+    ob.add_texts(texts)
+
+    results = ob.similarity_search_by_vector([3.0, -2.7], k=5)
+    assert results[0].page_content == "Apple"  # Cosine distance: 0.740
+    assert results[1].page_content == "Banana"  # Cosine distance: 0.525
+    assert results[2].page_content == "Carrot"  # Cosine distance: -0.266
+    assert results[3].page_content == "Mango"  # Cosine distance: -0.400
+    assert results[4].page_content == "Onion"  # Cosine distance: -0.469
+
+    del ob
+
+    # Test DOT_PRODUCT
+    # TODO we need *Embeddings to produce normalized vectors
+
+    # Test DOT_PRODUCT_NON_NORMALIZED
+    # TODO Core error: Argument condition "value <= OBXHnswDistanceType_Hamming" not met
+    # embedder.known_texts = []  # To produce same embeddings
+    # ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED,
+    #                clear_db=True)
+    # ob.add_texts(texts)
+    #
+    # results = ob.similarity_search_with_score([1.3, 1.5], k=3)
+    # print(results)
+    #
+    # results = ob.similarity_search_by_vector([1.3, 1.5], k=3)
+    # print(results)
+    # assert results[0].page_content == "Apple"  # Dot product: 1.3
+    # assert results[1].page_content == "Banana"  # Dot product: 2.8
+    # assert results[2].page_content == "Carrot"  # Dot product: 4.3
+    #
+    # del ob
+
+
+def test_similarity_search_with_relevance_scores() -> None:
+    """ Tests that similarity_search_with_relevance_scores returns values in range [0, 1] regardless the distance type.
+    """
+
+    texts = ["Apple", "Banana", "Carrot", "Mango", "Onion"]
+
+    # Test euclidean
+    # TODO currently relevance score for euclidean distance isn't implemented
+    # ob = ObjectBox(
+    #     embedding=ConsistentFakeEmbeddings(dimensionality=2),
+    #     embedding_dimensions=2,
+    #     distance_type=HnswDistanceType.EUCLIDEAN,
+    #     clear_db=True
+    # )
+    # ob.add_texts(texts)
+    #
+    # results = ob.similarity_search_with_relevance_scores("Strawberry", k=3)
+    # assert 0.0 <= results[0][1] <= 1.0
+    # assert 0.0 <= results[1][1] <= 1.0
+    # assert 0.0 <= results[2][1] <= 1.0
+    #
+    # del ob
+
+    # Test cosine
+    ob = ObjectBox(
+        embedding=ConsistentFakeEmbeddings(dimensionality=2),
+        embedding_dimensions=2,
+        distance_type=HnswDistanceType.COSINE,
+        clear_db=True
+    )
+    ob.add_texts(texts)
+
+    results = ob.similarity_search_with_relevance_scores("Strawberry", k=3)
+    assert 0.0 <= results[0][1] <= 1.0
+    assert 0.0 <= results[1][1] <= 1.0
+    assert 0.0 <= results[2][1] <= 1.0
+
+    # TODO test DOT_PRODUCT
+    # TODO test DOT_PRODUCT_UNNORMALIZED
 
 
 def test_from_texts() -> None:
@@ -137,7 +250,7 @@ def test_delete_vector_by_ids() -> None:
     assert ob._vector_box.count() == 1
 
 
-def OFF_test_parent_document_retriever() -> None:
+def test_parent_document_retriever() -> None:
     loaders = [
         TextLoader("testdata/paul_graham_essay.txt"),
         TextLoader("testdata/state_of_the_union.txt"),
@@ -171,7 +284,7 @@ def OFF_test_parent_document_retriever() -> None:
     assert len(retrieved_docs[0].page_content) == 38540
 
 
-def OFF_test_multi_vector_retriever() -> None:
+def test_multi_vector_retriever() -> None:
     loaders = [
         TextLoader("testdata/paul_graham_essay.txt"),
         TextLoader("testdata/state_of_the_union.txt"),
