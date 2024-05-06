@@ -3,6 +3,7 @@ import shutil
 from typing import *
 import numpy as np
 import objectbox
+import time
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -40,6 +41,7 @@ class ObjectBox(VectorStore):
         distance_type: HnswDistanceType = HnswDistanceType.EUCLIDEAN,
         db_directory: Optional[str] = None,
         clear_db: Optional[bool] = False,
+        do_log: Optional[bool] = False,
     ):
         self._embedding = embedding
         self._embedding_dimensions = embedding_dimensions
@@ -49,6 +51,7 @@ class ObjectBox(VectorStore):
         self._entity_model = self._create_entity_class()
         self._db = self._create_objectbox_db()
         self._vector_box = objectbox.Box(self._db, self._entity_model)
+        self._do_log = do_log
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -66,11 +69,21 @@ class ObjectBox(VectorStore):
         Returns:
             List of ids for the newly inserted documents
         """
-        embeddings = self._embedding.embed_documents(list(texts))
+
+        texts_list = list(texts)
+        start = time.perf_counter()
+        embeddings = self._embedding.embed_documents(texts_list)
+
+        if self._do_log:
+            end = time.perf_counter()
+            print(f"Embedded  {len(texts_list)} documents in {end - start} seconds")
+        
         ids = []
 
         if not metadatas:
             metadatas = [{} for _ in texts]
+
+        start = time.perf_counter()
 
         with self._db.write_tx():
             for text, metadata, embedding in zip(texts, metadatas, embeddings):
@@ -82,6 +95,11 @@ class ObjectBox(VectorStore):
                     )
                 )
                 ids.append(object_id)
+
+        if self._do_log:
+            end = time.perf_counter()
+            print(f"ObjectBox stored {len(ids)} documents in { end - start} seconds")
+
         return ids
 
     def similarity_search(
@@ -134,11 +152,18 @@ class ObjectBox(VectorStore):
             List of Documents with score most similar to the query vector.
         """
         embedded_query = self._embedding.embed_query(query)
+
+        start = time.perf_counter()
         embeddings_prop = self._entity_model.get_property("embeddings")
         qb = self._vector_box.query()
         qb.nearest_neighbors_f32(embeddings_prop, embedded_query, k)
         query = qb.build()
         results = query.find_with_scores()
+
+        if self._do_log:
+            end = time.perf_counter()
+            print(f"ObjectBox retrieved {len(results)} vectors in { end - start} seconds")
+
         return [
             (Document(page_content=obj.text, metadata=obj.metadata), score)
             for obj, score in results
@@ -156,11 +181,18 @@ class ObjectBox(VectorStore):
         Returns:
             List of Documents most similar to the query vector.
         """
+        start = time.perf_counter()
+
         embeddings_prop = self._entity_model.get_property("embeddings")
         qb = self._vector_box.query()
         qb.nearest_neighbors_f32(embeddings_prop, embedding, k)
         query = qb.build()
         results = query.find_with_scores()
+
+        if self._do_log:
+            end = time.perf_counter()
+            print(f"ObjectBox retrieved {len(results)} vectors in { end - start} seconds")
+
         return [
             Document(page_content=obj.text, metadata=obj.metadata)
             for obj, _ in results
@@ -201,6 +233,11 @@ class ObjectBox(VectorStore):
                 except ValueError:
                     raise ValueError("invalid id input")
                 self._vector_box.remove(int_id)
+
+        if self._do_log:
+            end = time.perf_counter()
+            print(f"ObjectBox deleted {len(ids)} vectors in { end - start} seconds")
+
         return True
 
     def _create_objectbox_db(self) -> objectbox:
