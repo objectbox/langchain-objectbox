@@ -22,16 +22,16 @@ def remove_test_dir(test_dir: str) -> None:
 
 @pytest.fixture(autouse=True)
 def auto_cleanup() -> Generator[None, None, None]:
-    remove_test_dir("data")
+    remove_test_dir("objectbox")
     try:
         yield  # run the test function
     finally:
-        remove_test_dir("data")
+        remove_test_dir("objectbox")
 
 
 def test_objectbox_db_initialisation() -> None:
     ObjectBox(embedding=FakeEmbeddings(), embedding_dimensions=10)
-    folder_path = "data"
+    folder_path = "objectbox"
 
     assert os.path.exists(folder_path), f"Folder '{folder_path}' does not exist."
 

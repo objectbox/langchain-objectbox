@@ -17,7 +17,7 @@ from objectbox.model.properties import (
     PropertyType,
 )
 
-DIRECTORY = "data"
+DIRECTORY = "objectbox"
 
 
 class ObjectBox(VectorStore):
@@ -242,7 +242,7 @@ class ObjectBox(VectorStore):
 
     def _create_objectbox_db(self) -> objectbox:
         """registering the VectorEntity model and setting up objectbox database"""
-        db_path = "objectbox" if self.db_directory is None else self.db_directory
+        db_path = DIRECTORY if self.db_directory is None else self.db_directory
         if self._clear_db and os.path.exists(db_path):
             shutil.rmtree(db_path)
         model = objectbox.Model()
