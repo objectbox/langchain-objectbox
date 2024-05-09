@@ -69,4 +69,10 @@ pytest
 poetry build
 ```
 
+### Update ObjectBox
 
+```bash
+cd libs/objectbox
+poetry show objectbox
+poetry update objectbox
+```

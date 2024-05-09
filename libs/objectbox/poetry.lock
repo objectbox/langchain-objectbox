@@ -854,12 +854,12 @@ files = [
 
 [[package]]
 name = "objectbox"
-version = "0.7.0a7"
+version = "0.7.0a9"
 description = "ObjectBox is a superfast lightweight database for objects"
 optional = false
 python-versions = "<4,>=3.4"
 files = [
-    {file = "objectbox-0.7.0a7-py3-none-any.whl", hash = "sha256:6396353b81526d45279094c127aa2f9dcf86c118d4dc122e0ab7133a7fa69238"},
+    {file = "objectbox-0.7.0a9-py3-none-any.whl", hash = "sha256:c23e80df7edf9fd8424ad2e3a0813608cf7e3ad7491fdaf84e1bbd4b91199b01"},
 ]
 
 [package.dependencies]
@@ -1426,4 +1426,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "2eaa88ef6dff37b98d55838a99447d84749d38c7036dc6d6c1b42cdfc62c699b"
+content-hash = "f097b76901be93d2be726b8a36d97661a0c0c1c5501e2fd9872b1ebf4c69997f"
