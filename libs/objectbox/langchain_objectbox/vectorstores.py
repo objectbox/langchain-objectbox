@@ -10,7 +10,7 @@ from langchain_core.vectorstores import VectorStore
 from objectbox.model.entity import Entity
 from objectbox.model.model import IdUid
 from objectbox.model.properties import (
-    HnswDistanceType,
+    VectorDistanceType,
     HnswIndex,
     Id,
     Property,
@@ -38,7 +38,7 @@ class ObjectBox(VectorStore):
         self,
         embedding: Embeddings,
         embedding_dimensions: int,
-        distance_type: HnswDistanceType = HnswDistanceType.EUCLIDEAN,
+        distance_type: VectorDistanceType = VectorDistanceType.EUCLIDEAN,
         db_directory: Optional[str] = None,
         clear_db: Optional[bool] = False,
         do_log: Optional[bool] = False,
@@ -50,7 +50,7 @@ class ObjectBox(VectorStore):
         self._clear_db = clear_db
         self._entity_model = self._create_entity_class()
         self._db = self._create_objectbox_db()
-        self._vector_box = objectbox.Box(self._db, self._entity_model)
+        self._vector_box = self._db.box(self._entity_model)
         self._do_log = do_log
 
     @property
@@ -120,20 +120,20 @@ class ObjectBox(VectorStore):
         return lambda score: self._convert_score(self._distance_type, score)
 
     @staticmethod
-    def _convert_score(type: HnswDistanceType, score: float) -> float:
+    def _convert_score(type: VectorDistanceType, score: float) -> float:
         # Map ObjectBox distance to LangChain range, in which 0 is dissimilar, 1 is most similar.
-        if type == HnswDistanceType.EUCLIDEAN:
+        if type == VectorDistanceType.EUCLIDEAN:
             # Not required: score = sqrt(score)  # ObjectBox returns squared Euclidean
             if score > 1.0:  # For now, we assume normalized vectors, which result in scores in the range 0..1
                 return 0.0
             return 1.0 - score
-        elif type == HnswDistanceType.COSINE:
+        elif type == VectorDistanceType.COSINE:
             return 1.0 - score / 2.0
-        elif type == HnswDistanceType.DOT_PRODUCT:
+        elif type == VectorDistanceType.DOT_PRODUCT:
             if score > 2.0:  # For now, we assume normalized vectors, which result in scores in the range 0..2
                 return 0.0
             return 1.0 - score / 2.0
-        elif type == HnswDistanceType.DOT_PRODUCT_NON_NORMALIZED:
+        elif type == VectorDistanceType.DOT_PRODUCT_NON_NORMALIZED:
             return 1.0 - score / 2.0
         else:
             raise Exception(f"Unknown distance type: {type.name}")
@@ -249,7 +249,7 @@ class ObjectBox(VectorStore):
         model.entity(self._entity_model, last_property_id=IdUid(4, 1004))
         model.last_entity_id = IdUid(1, 1)
         model.last_index_id = IdUid(3, 10001)
-        return objectbox.Builder().model(model).directory(db_path).build()
+        return objectbox.Store(model=model,directory=db_path)
 
     def _create_entity_class(self) -> Entity:
         """Dynamically define an Entity class according to the parameters."""

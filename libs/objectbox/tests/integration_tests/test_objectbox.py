@@ -12,13 +12,11 @@ from langchain.storage import InMemoryStore, InMemoryByteStore
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
 
-from objectbox.c import obx_remove_db_files, c_str
-from objectbox.model.properties import HnswDistanceType
-
+import objectbox
+from objectbox.model.properties import VectorDistanceType
 
 def remove_test_dir(test_dir: str) -> None:
-    obx_remove_db_files(c_str(test_dir))
-
+    objectbox.Store.remove_db_files(test_dir)
 
 @pytest.fixture(autouse=True)
 def auto_cleanup() -> Generator[None, None, None]:
@@ -45,7 +43,7 @@ def test_similarity_search() -> None:
     ob = ObjectBox(
         embedding=ConsistentFakeEmbeddings(dimensionality=10),
         embedding_dimensions=10,
-        distance_type=HnswDistanceType.EUCLIDEAN
+        distance_type=VectorDistanceType.EUCLIDEAN
     )
 
     objects = [
@@ -107,7 +105,7 @@ def test_similarity_search_distance_types() -> None:
 
     # Test EUCLIDEAN
     embedder.known_texts = []  # To produce same embeddings
-    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.EUCLIDEAN,
+    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=VectorDistanceType.EUCLIDEAN,
                    clear_db=True)
     ob.add_texts(texts)
 
@@ -120,7 +118,7 @@ def test_similarity_search_distance_types() -> None:
 
     # Test COSINE
     embedder.known_texts = []  # To produce same embeddings
-    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.COSINE,
+    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=VectorDistanceType.COSINE,
                    clear_db=True)
     ob.add_texts(texts)
 
@@ -137,9 +135,9 @@ def test_similarity_search_distance_types() -> None:
     # TODO we need *Embeddings to produce normalized vectors
 
     # Test DOT_PRODUCT_NON_NORMALIZED
-    # TODO Core error: Argument condition "value <= OBXHnswDistanceType_Hamming" not met
+    # TODO Core error: Argument condition "value <= OBXVectorDistanceType_Hamming" not met
     # embedder.known_texts = []  # To produce same embeddings
-    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=HnswDistanceType.COSINE,
+    ob = ObjectBox(embedding=embedder, embedding_dimensions=2, distance_type=VectorDistanceType.COSINE,
                    clear_db=True)
     ob.add_texts(texts)
 
@@ -192,7 +190,7 @@ def test_similarity_search_with_relevance_scores() -> None:
     # ob = ObjectBox(
     #     embedding=ConsistentFakeEmbeddings(dimensionality=2),
     #     embedding_dimensions=2,
-    #     distance_type=HnswDistanceType.EUCLIDEAN,
+    #     distance_type=VectorDistanceType.EUCLIDEAN,
     #     clear_db=True
     # )
     # ob.add_texts(texts)
@@ -208,7 +206,7 @@ def test_similarity_search_with_relevance_scores() -> None:
     ob = ObjectBox(
         embedding=ConsistentFakeEmbeddings(dimensionality=2),
         embedding_dimensions=2,
-        distance_type=HnswDistanceType.COSINE,
+        distance_type=VectorDistanceType.COSINE,
         clear_db=True
     )
     ob.add_texts(texts)
