@@ -276,7 +276,7 @@ def test_delete_vector_by_ids() -> None:
 def test_parent_document_retriever() -> None:
     loaders = [
         TextLoader("testdata/paul_graham_essay.txt"),
-        TextLoader("testdata/state_of_the_union.txt"),
+        TextLoader("testdata/objectbox_data.txt"),
     ]
     docs = []
     for loader in loaders:
@@ -301,16 +301,16 @@ def test_parent_document_retriever() -> None:
 
     assert len(list(store.yield_keys())) == 2
 
-    sub_docs = vectorstore.similarity_search("justice breyer")
+    sub_docs = vectorstore.similarity_search("ObjectBox") 
 
-    retrieved_docs = retriever.invoke("justice breyer")
-    assert len(retrieved_docs[0].page_content) == 38540
+    retrieved_docs = retriever.invoke("ObjectBox")
+    assert len(retrieved_docs[0].page_content) == 2452
 
 
 def test_multi_vector_retriever() -> None:
     loaders = [
         TextLoader("testdata/paul_graham_essay.txt"),
-        TextLoader("testdata/state_of_the_union.txt"),
+        TextLoader("testdata/objectbox_data.txt"),
     ]
     docs = []
     for loader in loaders:
@@ -347,9 +347,9 @@ def test_multi_vector_retriever() -> None:
     retriever.docstore.mset(list(zip(doc_ids, docs)))
 
     # Vectorstore alone retrieves the small chunks
-    res = retriever.vectorstore.similarity_search("justice breyer")[0]
-
+    small = retriever.vectorstore.similarity_search("ObjectBox")[0]
+    assert len(small.page_content) == 251
+    
     # Retriever returns larger chunks
-    assert len(retriever.invoke("justice breyer")[0].page_content) == 9194
-
-    docs = text_splitter.split_documents(docs)
+    large = retriever.invoke("ObjectBox")[0]
+    assert len(large.page_content) == 2451
