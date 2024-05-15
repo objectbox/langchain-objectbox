@@ -1,0 +1,29 @@
+stages:
+  - test
+
+.test:
+  cache:
+    paths:
+      - .cache/pip
+  stage: test
+  variables:  # Change pip's cache directory to be inside the project directory since we can only cache local items.
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"   
+  script:
+    - python -V
+    - pip install poetry
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - cd libs/objectbox
+    - poetry install
+    - poetry run pytest
+
+# First, build the source and package it as a python wheel
+test:linux:x64:
+  extends: .test
+  tags: [x64, docker, linux]
+  image: python:$PYTHON_VERSION
+  parallel:
+    matrix:
+      # Note: Docker images will have an arbitrary minor version due to "if-not-present" pull policy.
+      #       If this becomes a problem, we could e.g. specify a minor version explicitly.
+      - PYTHON_VERSION: [ '3.8', '3.9', '3.10', '3.11', '3.12']

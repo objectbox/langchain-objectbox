@@ -1,0 +1,68 @@
+Discover ObjectBox: The Lightning-Fast Mobile Database for Persistent Object Storage. Streamline Your Workflow, Eliminate Repetitive Tasks, and Enjoy a User-Friendly Data Interface.
+
+Define your model by adding an @Entity (internal name for database objects) annotation to at least one class and an @Id annotation to one of the class variables.
+
+Discover how to use the Query API to create queries with ObjectBox DB. By utilizing these queries, you can retrieve stored objects that meet user-defined criteria.
+
+Java Android:
+```java
+public class ObjectBox {
+    private static BoxStore boxStore;
+
+    public static void init(Context context) {
+        boxStore = MyObjectBox.builder()
+                .androidContext(context.getApplicationContext())
+                .build();
+    }
+
+    public static BoxStore get() { return boxStore; }
+}
+```
+
+Use box.query(condition) and supply a condition on one or more properties to start building a query.
+
+Create a condition by accessing a property via the underscore class of the entity, e.g. User_.firstName.equal("Joe").
+
+Use build() to create a re-usable query instance. To then retrieve all results use find() on the query. More options on retrieving results are discussed later in Run a query.
+
+Once done, close() the query to clean up resources.
+
+Here is a full example to query for all users with the first name “Joe”:
+
+ObjectBox Query example (Java):
+```java
+Query<User> query = userBox.query(User_.firstName.equal("Joe")).build();
+List<User> joes = query.find();
+query.close();
+```
+
+ObjectBox Query example (Kotlin):
+```kotlin
+val query = userBox.query(User_.firstName.equal("Joe")).build()
+val joes = query.find()
+query.close()
+```
+
+For example to get users with the first name “Joe” that are born later than 1970 and whose last name starts with “O”:
+
+```kotlin
+val query = userBox.query(
+        User_.firstName equal "Joe"
+                and (User_.yearOfBirth greater 1970)
+                and (User_.lastName startsWith "O")
+        .build()
+val youngJoes = query.find()
+query.close()
+```
+
+Common conditions
+
+Apart from the standard conditions like equal(), notEqual(), greater() and less() there are also additional conditions available:
+
+    isNull() and notNull(),
+
+    between() to filter for values that are between the given two,
+
+    oneOf() and notOneOf() to filter for values that match any in the given array,
+
+    startsWith(), endsWith() and contains() for extended String filtering.

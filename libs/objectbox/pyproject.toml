@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "langchain-objectbox"
+version = "0.1.0a3"
+description = "Integration package connecting ObjectBox and LangChain"
+authors = ["ObjectBox" ]
+license = "MIT" 
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License"
+]
+[tool.poetry.dependencies]
+python = "^3.8.1" 
+langchain-core = "^0.1.45"
+objectbox = "0.7.0a14"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.1.1"
+langchain = "^0.1.16"
+numpy = [ 
+    { version = "^1.26", python = "^3.12" },
+    { version = "^1.24", python = "<=3.11" }
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

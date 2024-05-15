@@ -3,9 +3,8 @@
 ## About
 
 This package contains the [ObjectBox](https://objectbox.io) integrations for [LangChain](https://www.langchain.com).
-This page will show you how to use the ObjectBox vector store in your LangChain projects.
 
-## Getting Started
+## Getting Started 
 
 Install the `langchain-objectbox` package from PyPI via pip.
 
@@ -13,8 +12,7 @@ Install the `langchain-objectbox` package from PyPI via pip.
 pip install langchain-objectbox
 ```
 
-In Python import the ObjectBox vector store which is available under fully qualified class
-path `langchain_objectbox.vectorstores.ObjectBox`, e.g.:
+In Python import the ObjectBox vector store which is available under fully qualified class path `langchain_objectbox.vectorstores.ObjectBox`, e.g.:
 
 ```
 from langchain_objectbox.vectorstores import ObjectBox
@@ -28,15 +26,7 @@ Create an ObjectBox VectorStore using e.g. one of the `from_` class methods e.g.
 obx_vectorstore = ObjectBox.from_texts(texts, embeddings, embedding_dimensions=768)
 ```
 
-## Examples: How to use ObjectBox in LangChain
-
-Note: we have also fully runnable examples in the `examples` directory.
-
 ### Example 1: A *very* simple example using DeterministicFakeEmbedding
-
-This small example demonstrates how to create an ObjectBox vector store with a list of texts and then perform a
-similarity search.
-Note that the `DeterministicFakeEmbedding` is a not a real embedding model and thus does not match semantically.
 
 ```python
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
@@ -44,17 +34,17 @@ from langchain_objectbox.vectorstores import ObjectBox
 
 texts = ["foo", "bar", "baz"]
 obx_vectorstore = ObjectBox.from_texts(
-    texts,
+    texts, 
     DeterministicFakeEmbedding(size=10),
     embedding_dimensions=10,
 )
-result = obx_vectorstore.similarity_search("foo", k=1)
+result = obx_vectorstore.similarity_search("foo",k=1)
 print(result)
 ```
 
-### Example 2: A more complex example using web retrieval chain
+### Example 2: A more complex example using web retrieval chain.
 
-Prerequisites:
+Prerequisites: 
 
 - Ollama as local LLM: See installation notes on https://python.langchain.com/docs/get_started/quickstart
 - ``pip install langchain bs4``
@@ -101,11 +91,6 @@ retrieval_chain = create_retrieval_chain(retriever, document_chain)
 response = retrieval_chain.invoke({"input": "how can langsmith help with testing?"})
 print(response["answer"])
 ```
-
-## Developing
-
-If you are interested in developing the `langchain-objectbox` package itself (just "just" using it),
-you can check the "developer-notes.md" page.
 
 ## LICENSE
 
