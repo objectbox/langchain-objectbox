@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-objectbox"
-version = "0.1.0a3"
+version = "0.1.0a4"
 description = "Integration package connecting ObjectBox and LangChain"
 authors = ["ObjectBox" ]
 license = "MIT" 
@@ -12,7 +12,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8.1" 
 langchain-core = "^0.1.45"
-objectbox = "0.7.0a14"
+objectbox = "^4.0.0a0"
 
 
 [tool.poetry.group.test.dependencies]
