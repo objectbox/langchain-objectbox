@@ -9,6 +9,9 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License"
 ]
+include = [
+    "langchain_objectbox/objectbox-model.json" 
+]
 [tool.poetry.dependencies]
 python = "^3.8.1" 
 langchain-core = "^0.1.45"
