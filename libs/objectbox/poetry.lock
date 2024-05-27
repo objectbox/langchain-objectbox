@@ -853,17 +853,17 @@ files = [
 
 [[package]]
 name = "objectbox"
-version = "4.0.0a3"
+version = "4.0.0a4"
 description = "ObjectBox is a superfast lightweight database for objects"
 optional = false
 python-versions = "<4,>=3.4"
 files = [
-    {file = "objectbox-4.0.0a3-py3-none-any.whl", hash = "sha256:a362f30192f9baa12ba20ce03fba8b2432c06b8328dbf09144d475953fb6a9e4"},
+    {file = "objectbox-4.0.0a4-py3-none-any.whl", hash = "sha256:d932239ea984e3108064c023b473c1c7477cc97007a284bb35370ee031280761"},
 ]
 
 [package.dependencies]
 flatbuffers = "24.3.25"
-numpy = "<2"
+numpy = "*"
 
 [[package]]
 name = "orjson"
@@ -1421,4 +1421,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "e36cc83365736e8c67727da8dba3b189762378ee0e6dcb45049f0cb4a7fb30eb"
+content-hash = "023d1db306c4d66232dc81dbfa254d2952906b2f37dacebd0b824f76a7a38298"
