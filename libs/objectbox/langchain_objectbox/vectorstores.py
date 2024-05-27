@@ -15,6 +15,8 @@ from objectbox.model.properties import (
     Id,
     Property,
     PropertyType,
+    String,
+    Float32Vector
 )
 
 DIRECTORY = "objectbox"
@@ -154,9 +156,7 @@ class ObjectBox(VectorStore):
         embedded_query = self._embedding.embed_query(query)
 
         start = time.perf_counter()
-        embeddings_prop = self._entity_model.get_property("embeddings")
-        qb = self._vector_box.query()
-        qb.nearest_neighbors_f32(embeddings_prop, embedded_query, k)
+        qb = self._vector_box.query( self._entity_model.embeddings.nearest_neighbor(embedded_query, k) )
         query = qb.build()
         results = query.find_with_scores()
 
@@ -183,9 +183,7 @@ class ObjectBox(VectorStore):
         """
         start = time.perf_counter()
 
-        embeddings_prop = self._entity_model.get_property("embeddings")
-        qb = self._vector_box.query()
-        qb.nearest_neighbors_f32(embeddings_prop, embedding, k)
+        qb = self._vector_box.query( self._entity_model.embeddings.nearest_neighbor(embedding, k) )
         query = qb.build()
         results = query.find_with_scores()
 
@@ -246,30 +244,17 @@ class ObjectBox(VectorStore):
         if self._clear_db and os.path.exists(db_path):
             shutil.rmtree(db_path)
         model = objectbox.Model()
-        model.entity(self._entity_model, last_property_id=IdUid(4, 1004))
-        model.last_entity_id = IdUid(1, 1)
-        model.last_index_id = IdUid(3, 10001)
+        model.entity(self._entity_model)
         return objectbox.Store(model=model,directory=db_path)
 
     def _create_entity_class(self) -> Entity:
         """Dynamically define an Entity class according to the parameters."""
 
-        @Entity(id=1, uid=1)
+        @Entity()
         class VectorEntity:
-            id = Id(id=1, uid=1001)
-            text = Property(str, type=PropertyType.string, id=2, uid=1002)
+            id = Id()
+            text = String()
             metadata = Property(dict, type=PropertyType.flex, id=3, uid=1003)
-            embeddings = Property(
-                np.ndarray,
-                type=PropertyType.floatVector,
-                id=4,
-                uid=1004,
-                index=HnswIndex(
-                    id=1,
-                    uid=10001,
-                    dimensions=self._embedding_dimensions,
-                    distance_type=self._distance_type,
-                ),
-            )
+            embeddings = Float32Vector(index=HnswIndex(dimensions=self._embedding_dimensions, distance_type=self._distance_type))
 
         return VectorEntity
