@@ -114,6 +114,7 @@ def test_similarity_search_distance_types() -> None:
     assert results[1].page_content == "Carrot"
     assert results[2].page_content == "Onion"
 
+    ob._db.close()
     del ob
 
     # Test COSINE
@@ -129,6 +130,7 @@ def test_similarity_search_distance_types() -> None:
     assert results[3].page_content == "Mango"  # Cosine distance: -0.400
     assert results[4].page_content == "Onion"  # Cosine distance: -0.469
 
+    ob._db.close()
     del ob
 
     # Test DOT_PRODUCT
